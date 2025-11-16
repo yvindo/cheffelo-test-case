@@ -3,14 +3,10 @@ using Work.Interfaces;
 
 namespace Work.Implementation
 {
-    public class UserRepository : IRepository<User, Guid>
+    public class UserRepository(MockDatabase context) : IRepository<User, Guid>
     {
-        private readonly MockDatabase _context;
+        private readonly MockDatabase _context = context;
 
-        public UserRepository(MockDatabase context)
-        {
-            _context = context;
-        }
         public void Create(User user)
         {
             _context.Users.Add(user.UserId, user);
@@ -18,7 +14,6 @@ namespace Work.Implementation
 
         public User Read(Guid key)
         {
-            //TODO: Decide on null reference handling
             return _context.Users.GetValueOrDefault(key);
         }
 
@@ -28,6 +23,10 @@ namespace Work.Implementation
             {
                 _context.Users[user.UserId] = user;
             }
+            else
+            {
+                throw new InvalidOperationException($"Cannot update user with id {user.UserId}. User does not exist.");
+            }
 
             //Alternative implementation if user should be added if not existing:
             //_context.Users[user.UserId] = user;
@@ -35,7 +34,11 @@ namespace Work.Implementation
 
         public void Remove(User user)
         {
-            _context.Users.Remove(user.UserId);
+            var userRemoved = _context.Users.Remove(user.UserId);
+            if (!userRemoved)
+            {
+                throw new InvalidOperationException($"User removal failed for user id {user.UserId}.");
+            }
         }
     }
 }
