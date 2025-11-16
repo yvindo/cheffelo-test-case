@@ -2,16 +2,17 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Work.ApiModels;
 using Work.Database;
-using Work.Implementation;
+using Work.Interfaces;
 
 namespace Work.Controllers
 {
     [ApiController]
-    public class UserController(UserRepository repository, IMapper mapper) : ControllerBase
+    public class UserController(IRepository<User, Guid> repository, IMapper mapper) : ControllerBase
     {
-        private readonly UserRepository _repository = repository;
+        private readonly IRepository<User, Guid> _repository = repository;
         private readonly IMapper _mapper = mapper;
 
+        [HttpGet("GetUser")]
         public IActionResult Get(Guid id)
         {
             var user = _repository.Read(id);
@@ -23,6 +24,7 @@ namespace Work.Controllers
             return Ok(user);
         }
 
+        [HttpPost("CreateUser")]
         public IActionResult Post(UserModelDto user)
         {
             try
@@ -32,14 +34,15 @@ namespace Work.Controllers
             }
             catch (ArgumentException)
             {
-                return BadRequest($"User with id {user.Id}");
+                return BadRequest($"User with id {user.Id} already exists");
             }
             catch (Exception)
             {
                 return StatusCode(500);
             }
         }
-        
+
+        [HttpPut("UpdateUser")]
         public IActionResult Put(UserModelDto user)
         {
             try
@@ -47,12 +50,17 @@ namespace Work.Controllers
                 _repository.Update(_mapper.Map<User>(user));
                 return Ok();
             }
-            catch (Exception e)
+            catch (InvalidOperationException e)
             {
-                return BadRequest(e);
+                return BadRequest(e.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500);
             }
         }
 
+        [HttpDelete("RemoveUser")]
         public IActionResult Delete(Guid id)
         {
             try

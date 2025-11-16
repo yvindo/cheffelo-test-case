@@ -1,4 +1,7 @@
 using AutoMapper;
+using Work.Database;
+using Work.Implementation;
+using Work.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +18,9 @@ var mapperConfig = new MapperConfiguration(cfg =>
 });
 
 IMapper mapper = mapperConfig.CreateMapper();
+builder.Services.AddSingleton(mapper);
+builder.Services.AddScoped<IRepository<User, Guid>, UserRepository>();
+builder.Services.AddSingleton<MockDatabase, MockDatabase>(_ => new MockDatabase(5));
 
 var app = builder.Build();
 
