@@ -7,10 +7,11 @@ using Work.Interfaces;
 namespace Work.Controllers
 {
     [ApiController]
-    public class UserController(IRepository<User, Guid> repository, IMapper mapper) : ControllerBase
+    public class UserController(IRepository<User, Guid> repository, IMapper mapper, ILogger<UserController> logger) : ControllerBase
     {
         private readonly IRepository<User, Guid> _repository = repository;
         private readonly IMapper _mapper = mapper;
+        private readonly ILogger<UserController> _logger = logger;
 
         [HttpGet("GetUser")]
         public IActionResult Get(Guid id)
@@ -30,14 +31,17 @@ namespace Work.Controllers
             try
             {
                 _repository.Create(_mapper.Map<User>(user));
+                _logger.LogInformation("User created with id {id}", user.Id);
                 return Ok();
             }
             catch (ArgumentException)
             {
+                _logger.LogInformation("User creation failed, user with id {id} already exists", user.Id);
                 return BadRequest($"User with id {user.Id} already exists");
             }
             catch (Exception)
             {
+                _logger.LogWarning("Unexpected error occured during user creation for user with id {id}", user.Id);
                 return StatusCode(500);
             }
         }
@@ -47,15 +51,18 @@ namespace Work.Controllers
         {
             try
             {
+                _logger.LogInformation("User with id {id} updated", user.Id);
                 _repository.Update(_mapper.Map<User>(user));
                 return Ok();
             }
             catch (InvalidOperationException e)
             {
+                _logger.LogInformation("User update failed, user with id {id} does not exists", user.Id);
                 return BadRequest(e.Message);
             }
             catch (Exception)
             {
+                _logger.LogWarning("Unexpected error occured during user update for user with id {id}", user.Id);
                 return StatusCode(500);
             }
         }
